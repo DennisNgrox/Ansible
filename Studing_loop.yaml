@@ -1,0 +1,24 @@
+---
+- name: Testing Loop
+  hosts: web-intra
+  tasks:
+    - name: Remove Zabbix-Agent
+      apt:
+        name: 
+          - zabbix-agent
+        state: absent
+
+    - name: Install Zabbix Agent
+      apt:
+        name:
+          - zabbix-agent
+        state: latest
+
+    - name: start service loop
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - mysql
+        - zabbix-agent
