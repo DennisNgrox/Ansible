@@ -1,0 +1,41 @@
+---
+- name: Testing Loop
+  hosts: web-intra
+  tasks:
+
+    - name: Wget Repository Zabbix
+      ansible.builtin.get_url:
+        url: https://repo.zabbix.com/zabbix/6.0/ubuntu/pool/main/z/zabbix-release/zabbix-release_6.0-4+ubuntu22.04_all.deb
+        dest: /home/dennis/
+        mode: '0777'
+
+    - name: Install a .deb package
+      ansible.builtin.apt:
+        deb: /home/dennis/zabbix-release_6.0-4+ubuntu22.04_all.deb
+
+    - name: Update all packages to their latest version
+      ansible.builtin.apt:
+        name: "*"
+        state: latest
+
+    - name: Install Components Zabbbix
+      apt:
+        name: "{{ item }}"
+        state: latest
+      loop:
+        - zabbix-server-mysql 
+        - zabbix-frontend-php 
+        - zabbix-sql-scripts 
+        - zabbix-nginx-conf
+        - zabbix-agent
+        - mysql-server
+        
+    - name: start service loop
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - mysql
+        - zabbix-agent
+        
