@@ -1,0 +1,60 @@
+---
+- name: Instaling Zabbix 4.0
+  hosts: zabbix
+  tasks:
+    - name: Wget Repository Zabbix
+      ansible.builtin.get_url:
+        url: https://repo.zabbix.com/zabbix/4.0/rhel/8/x86_64/zabbix-release-4.0-2.el8.noarch.rpm
+        dest: /home/ansible/
+        mode: '0777'
+
+    - name: Install .rpm package
+      ansible.builtin.yum:
+        name: https://repo.zabbix.com/zabbix/4.0/rhel/8/x86_64/zabbix-release-4.0-2.el8.noarch.rpm
+        state: present 
+        disable_gpg_check: True
+
+    - name: Install Components Zabbbix
+      yum:
+        name: "{{ packages }}"
+        state: latest
+      vars:
+        packages:
+        - zabbix-server-mysql
+        - zabbix-web-mysql
+        - zabbix-agent
+        - mysql-server
+
+    - name: start service loop
+      service:
+        name: mysqld
+        state: started
+        enabled: true
+
+    - name: Create database and Commands config Zbx
+      ansible.builtin.shell:
+        cmd: "{{ item }}"
+      loop:
+        - mysql -u root --execute="create database zabbix character set utf8 collate utf8_bin;"
+        - mysql -u root --execute="create user zabbix@192.168.32.132 identified by 'Teste#20';"
+        - mysql -u root --execute="grant all privileges on zabbix.* to zabbix@192.168.32.132;"
+        - sed -i s'/# DBPassword=/DBPassword=Teste#20/' /etc/zabbix/zabbix_server.conf
+        - sed -i s'/# DBHost=localhost/DBHost=192.168.32.132/' /etc/zabbix/zabbix_server.conf
+        - zcat /usr/share/doc/zabbix-server-mysql*/create.sql.gz | mysql -h 192.168.32.132 -uzabbix -p'Teste#20' zabbix 
+        - sed -i s'/\; php_value\[date.timezone\] = Europe\/Riga/php_value\[date.timezone\] = America\/Sao_Paulo/' /etc/php-fpm.d/zabbix.conf
+
+    - name: start service loop
+      service:
+        name: "{{ item }}"
+        state: started
+        enabled: true
+      loop:
+        - zabbix-agent
+        - zabbix-server
+        - httpd
+        - php-fpm
+
+
+
+
+
