@@ -1,0 +1,12 @@
+---
+  - name: condicionais
+    hosts: web-intra
+    vars:
+      http_teste: 200
+    tasks:
+    - name: commands
+      ansible.builtin.shell:
+        cmd: "echo 1"
+      when: http_teste is not defined
+      
+      ## Result is false
