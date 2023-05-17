@@ -1,0 +1,11 @@
+---
+- name: Configurar usuario
+  hosts: <web-intra>
+  var:
+    - usuario: dennis 
+  tasks:
+    - name: usuario teste com uid 4500
+      user:
+        name: "{{ usuario }}"
+        uid: 4600
+        state: preset
