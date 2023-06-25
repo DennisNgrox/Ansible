@@ -1,0 +1,61 @@
+---
+- name: Instaling Zabbix Agent
+  hosts: all
+  vars_files: /mnt/c/Users/Ageri/Desktop/SCRIPTS/ansible/archives/variaveis.yaml
+  vars:
+    archive: "{{ archive }}"
+    hosts: "{{ hosts }}"
+  tasks:
+
+    - name: Wget Repository Zabbix
+      ansible.builtin.get_url:
+        url: https://repo.zabbix.com/zabbix/6.4/debian/pool/main/z/zabbix-release/zabbix-release_6.4-1+debian9_all.deb
+        dest: /home/ansible
+        mode: '0777'
+
+    - name: Install Repo Zabbix 6.4
+      ansible.builtin.apt:
+        deb: zabbix-release_6.4-1+debian9_all.deb 
+        state: present
+
+    - name: Install Components Zabbbix
+      apt:
+        name: zabbix-agent
+        state: latest
+
+    - name: List contents of directory
+      ansible.builtin.command: ls /var/run/zabbix
+      register: contents
+      ignore_errors: true
+
+    - name: Check contents for emptiness
+      ansible.builtin.debug:
+        msg: "Directory is empty"
+      when: contents.stdout == ""
+    
+    - name: create and permission directory for PID file
+      ansible.builtin.file:
+        path: /var/run/zabbix/
+        state: directory
+        owner: zabbix
+        group: zabbix
+        mode: 0775
+      when: contents.stdout == ""
+
+    - name: copy archive configuration zabbix Agent
+      ansible.builtin.copy:
+        src: "{{ archive }}"
+        dest: /etc/zabbix/
+        mode: 0775
+        owner: zabbix
+        group: zabbix
+
+
+    - name: started zabbix-agentd
+      ansible.builtin.service:
+        name: zabbix-agent
+        state: started
+        enabled: true
+
+
+
